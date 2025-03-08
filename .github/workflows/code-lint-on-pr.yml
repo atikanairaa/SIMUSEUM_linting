@@ -1,0 +1,39 @@
+name: Laravel Code Linting on PR
+
+on:
+  pull_request:
+    branches:
+      - main
+      - develop
+
+jobs:
+  lint:
+    name: Lint Laravel Code on PR
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout kode repository
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          tools: composer, phpstan, pint
+
+      - name: Cache dependencies
+        uses: actions/cache@v3
+        with:
+          path: vendor
+          key: composer-${{ hashFiles('**/composer.lock') }}
+          restore-keys: |
+            composer-
+
+      - name: Install dependencies
+        run: composer install --no-progress --no-scripts --no-interaction
+
+      - name: Run PHPStan (Static Analysis)
+        run: phpstan analyse --memory-limit=1G || true
+
+      - name: Run Laravel Pint (Code Formatting)
+        run: pint --test || true
